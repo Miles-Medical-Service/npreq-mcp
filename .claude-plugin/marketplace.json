@@ -1,0 +1,17 @@
+{
+  "name": "npreq",
+  "owner": {
+    "name": "Miles Medical Service",
+    "url": "https://npreq.com/"
+  },
+  "metadata": {
+    "description": "The NPReq plugin for Claude Code: NP/APRN state requirement data through your own NPReq API key."
+  },
+  "plugins": [
+    {
+      "name": "npreq",
+      "source": "./",
+      "description": "Read-only NP/APRN state requirement data for 56 US jurisdictions, with official sources, through your own NPReq API key."
+    }
+  ]
+}

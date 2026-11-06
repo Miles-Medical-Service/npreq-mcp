@@ -1,0 +1,40 @@
+name: Bug report
+description: Something in npreq-mcp or the npreq plugin does not work as described.
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Never paste an API key, an access token or anyone's personal information here. For a security problem, use
+        the Security tab (Report a vulnerability) instead of an issue.
+  - type: input
+    id: version
+    attributes:
+      label: Version
+      description: The output of `python3 npreq_mcp.py --version`, and your Claude Code version if you use the plugin.
+    validations:
+      required: true
+  - type: dropdown
+    id: client
+    attributes:
+      label: MCP client
+      options:
+        - Claude Code plugin
+        - Claude Code (manual setup)
+        - Claude Desktop
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+      description: The tool, its arguments, what you expected and what you got (the tool error's status and code help).
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+    validations:
+      required: false

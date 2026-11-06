@@ -1,0 +1,34 @@
+{
+  "name": "npreq",
+  "displayName": "NPReq",
+  "version": "0.1.0",
+  "description": "Read-only NP/APRN state requirement data (licensure, CE rules, renewal, prescribing) for 56 US jurisdictions, with official sources, through your own NPReq API key.",
+  "author": {
+    "name": "Miles Medical Service",
+    "url": "https://npreq.com/"
+  },
+  "homepage": "https://npreq.com/",
+  "repository": "https://github.com/Miles-Medical-Service/npreq-mcp",
+  "license": "MIT",
+  "keywords": ["nurse-practitioner", "aprn", "licensure", "continuing-education", "state-requirements"],
+  "documentationUrl": "https://account.npreq.com/account/docs",
+  "supportUrl": "https://github.com/Miles-Medical-Service/npreq-mcp/issues",
+  "privacyPolicyUrl": "https://npreq.com/privacy.html",
+  "termsOfServiceUrl": "https://npreq.com/terms.html",
+  "userConfig": {
+    "api_key": {
+      "type": "string",
+      "title": "NPReq API key",
+      "description": "Your NPReq API key (npq_live_..., or npq_test_... for staging). Stored in your system's credential store; sent only to POST /v1/token on the API you choose below.",
+      "sensitive": true,
+      "required": true
+    },
+    "api_base": {
+      "type": "string",
+      "title": "NPReq API",
+      "description": "Which NPReq API the key is sent to: production, or staging for npq_test_ keys.",
+      "options": ["https://api.npreq.com", "https://api-staging.npreq.com"],
+      "default": "https://api.npreq.com"
+    }
+  }
+}

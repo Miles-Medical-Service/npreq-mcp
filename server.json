@@ -1,0 +1,40 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.Miles-Medical-Service/npreq",
+  "title": "NPReq",
+  "description": "NP/APRN state requirements for 56 US jurisdictions, with official sources, via your NPReq API key.",
+  "version": "0.1.0",
+  "websiteUrl": "https://npreq.com/",
+  "repository": {
+    "url": "https://github.com/Miles-Medical-Service/npreq-mcp",
+    "source": "github"
+  },
+  "packages": [
+    {
+      "registryType": "pypi",
+      "registryBaseUrl": "https://pypi.org",
+      "identifier": "npreq-mcp",
+      "version": "0.1.0",
+      "runtimeHint": "uvx",
+      "transport": {
+        "type": "stdio"
+      },
+      "environmentVariables": [
+        {
+          "name": "NPREQ_API_KEY",
+          "description": "Your NPReq API key (npq_live_..., or npq_test_... for staging). Sent only to POST /v1/token.",
+          "isRequired": true,
+          "isSecret": true
+        },
+        {
+          "name": "NPREQ_API_BASE",
+          "description": "The NPReq API: production, or staging for npq_test_ keys.",
+          "isRequired": false,
+          "isSecret": false,
+          "default": "https://api.npreq.com",
+          "choices": ["https://api.npreq.com", "https://api-staging.npreq.com"]
+        }
+      ]
+    }
+  ]
+}

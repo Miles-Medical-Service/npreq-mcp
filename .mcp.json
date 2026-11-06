@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "npreq": {
+      "command": "python3",
+      "args": ["${CLAUDE_PLUGIN_ROOT}/npreq_mcp.py"],
+      "env": {
+        "NPREQ_API_KEY": "${user_config.api_key}",
+        "NPREQ_API_BASE": "${user_config.api_base}"
+      }
+    }
+  }
+}

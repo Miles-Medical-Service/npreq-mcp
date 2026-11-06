@@ -1,0 +1,11 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Report a security vulnerability
+    url: https://github.com/Miles-Medical-Service/npreq-mcp/security/advisories/new
+    about: Report it privately here, never in a public issue.
+  - name: NPReq API documentation
+    url: https://account.npreq.com/account/docs
+    about: Keys, scopes, limits and the REST routes the tools call.
+  - name: NPReq (account, plans and data questions)
+    url: https://npreq.com/
+    about: Questions about your account, your plan or a requirement value.

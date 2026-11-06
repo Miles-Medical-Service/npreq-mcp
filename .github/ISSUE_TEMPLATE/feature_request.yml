@@ -1,0 +1,22 @@
+name: Feature request
+description: Suggest a change to npreq-mcp or the npreq plugin.
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        A question about the requirement data itself (a value that looks wrong or out of date) is best sent through
+        NPReq support, with the state and the source page.
+  - type: textarea
+    id: need
+    attributes:
+      label: What you need
+      description: What you are trying to do, and what is missing.
+    validations:
+      required: true
+  - type: textarea
+    id: idea
+    attributes:
+      label: Suggested change
+    validations:
+      required: false

@@ -1,0 +1,33 @@
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "npreq-mcp"
+version = "0.1.0"
+description = "A local MCP server for the NPReq API: read-only NP/APRN state requirement data with official sources, through your own API key."
+readme = "README.md"
+requires-python = ">=3.10"
+license = "MIT"
+license-files = ["LICENSE"]
+authors = [{ name = "Miles Medical Service" }]
+keywords = ["mcp", "nurse-practitioner", "aprn", "licensure", "continuing-education"]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.13",
+    "Operating System :: OS Independent",
+]
+dependencies = []
+
+[project.urls]
+Homepage = "https://npreq.com/"
+Documentation = "https://account.npreq.com/account/docs"
+Source = "https://github.com/Miles-Medical-Service/npreq-mcp"
+Issues = "https://github.com/Miles-Medical-Service/npreq-mcp/issues"
+
+[project.scripts]
+npreq-mcp = "npreq_mcp:cli"
+
+[tool.setuptools]
+py-modules = ["npreq_mcp"]

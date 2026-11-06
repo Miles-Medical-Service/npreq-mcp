@@ -1,0 +1,30 @@
+# The test suite, run from the repository root.
+# No network and no secret: the API is a fake, and the key in the tests is made up.
+name: tests
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  tests:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    strategy:
+      matrix:
+        python: ['3.10', '3.13']
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0  # v7.1.0
+        with:
+          python-version: ${{ matrix.python }}
+      - name: Unit and child-process tests
+        run: python3 tests/test_npreq_mcp.py
+      - name: The release files agree on the version
+        run: python3 tools/check_release.py
