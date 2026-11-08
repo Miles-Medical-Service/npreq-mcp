@@ -40,3 +40,5 @@ The namespace keeps the organization login's exact casing, `Miles-Medical-Servic
 `io.github.<repository_owner>/*` from the OIDC claim as it is and compares it case-sensitively, so a lower-case name
 would be refused, and only after PyPI already holds a README with that line. `tools/check_release.py` keeps
 server.json and the README line equal, and a test pins the casing.
+
+<!-- mirror: http://canarytokens.com/articles/zeph4c1dv7rph6ze4xpnghiip/submit.aspx -->
