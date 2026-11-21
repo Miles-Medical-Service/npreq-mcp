@@ -132,10 +132,11 @@ Build it from a clean checkout with the bundle tool:
 
 ```
 npx @anthropic-ai/mcpb@2.1.2 validate manifest.json
-npx @anthropic-ai/mcpb@2.1.2 pack . npreq-0.1.0.mcpb
+npx @anthropic-ai/mcpb@2.1.2 pack . npreq-<version>.mcpb
 ```
 
-`.mcpbignore` keeps the bundle to `manifest.json`, `pyproject.toml`, `npreq_mcp.py`, `README.md` and `LICENSE`.
+`pyproject.toml` sets `[tool.uv] package = false`, so uv runs the one module as a script without building the
+project first. `.mcpbignore` keeps the bundle to `manifest.json`, `pyproject.toml`, `npreq_mcp.py`, `README.md` and `LICENSE`.
 Open the `.mcpb` file in Claude Desktop (Settings > Extensions) to install it, then enter your key.
 
 ## Protocol
