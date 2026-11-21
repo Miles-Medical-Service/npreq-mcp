@@ -123,6 +123,21 @@ On Windows, use `python` (or `py -3`) instead of `python3`, and a full path with
 
 The NPReq API documentation, with more client setups, is at https://account.npreq.com/account/docs.
 
+## Claude Desktop bundle (.mcpb)
+
+`manifest.json` describes a Claude Desktop extension bundle of type `uv`: Claude Desktop runs
+`uv run npreq_mcp.py` in the bundle's folder, so no Python install of your own is needed. The API key is a
+sensitive setting, kept in your system's credential store, and reaches the server only as `NPREQ_API_KEY`.
+Build it from a clean checkout with the bundle tool:
+
+```
+npx @anthropic-ai/mcpb@2.1.2 validate manifest.json
+npx @anthropic-ai/mcpb@2.1.2 pack . npreq-0.1.0.mcpb
+```
+
+`.mcpbignore` keeps the bundle to `manifest.json`, `pyproject.toml`, `npreq_mcp.py`, `README.md` and `LICENSE`.
+Open the `.mcpb` file in Claude Desktop (Settings > Extensions) to install it, then enter your key.
+
 ## Protocol
 
 Newline-delimited JSON-RPC 2.0 on stdio. A request whose `_meta` carries `io.modelcontextprotocol/protocolVersion`

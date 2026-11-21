@@ -649,18 +649,23 @@ class Release(unittest.TestCase):
         import tempfile
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
-            for rel in ('pyproject.toml', 'npreq_mcp.py', 'server.json', 'README.md', '.claude-plugin/plugin.json'):
+            for rel in ('pyproject.toml', 'npreq_mcp.py', 'server.json', 'README.md', '.claude-plugin/plugin.json',
+                        'manifest.json'):
                 (root / rel).parent.mkdir(parents=True, exist_ok=True)
                 shutil.copy(ROOT / rel, root / rel)
             server = json.loads((root / 'server.json').read_text(encoding='utf-8'))
             server['packages'][0]['version'] = '0.0.9'
             (root / 'server.json').write_text(json.dumps(server), encoding='utf-8')
+            bundle = json.loads((root / 'manifest.json').read_text(encoding='utf-8'))
+            bundle['version'] = '0.0.8'
+            (root / 'manifest.json').write_text(json.dumps(bundle), encoding='utf-8')
             readme = (root / 'README.md').read_text(encoding='utf-8').replace('<!-- mcp-name:', '<!-- name:')
             (root / 'README.md').write_text(readme, encoding='utf-8')
             found = check_release.problems(None, root)
-        self.assertEqual(len(found), 2, found)
+        self.assertEqual(len(found), 3, found)
         self.assertIn("server.json pypi package version is '0.0.9'", found[0])
-        self.assertIn('mcp-name: io.github.Miles-Medical-Service/npreq', found[1])
+        self.assertIn("manifest.json version is '0.0.8'", found[1])
+        self.assertIn('mcp-name: io.github.Miles-Medical-Service/npreq', found[2])
 
     def test_the_registry_entry_fits_the_schema_and_matches_the_plugin(self):
         s = self.server
@@ -680,6 +685,35 @@ class Release(unittest.TestCase):
         self.assertEqual(base['choices'], self.plugin['userConfig']['api_base']['options'])
         self.assertEqual(base['default'], m.DEFAULT_BASE)
         self.assertFalse(base['isSecret'] or base['isRequired'])
+
+    def test_the_desktop_bundle_runs_this_server_with_uv_and_keeps_the_key_secret(self):
+        """manifest.json for a Claude Desktop .mcpb, type uv, packed with mcpb pack."""
+        b = json.loads((ROOT / 'manifest.json').read_text(encoding='utf-8'))
+        self.assertEqual(b['manifest_version'], '0.4')
+        self.assertEqual(b['server']['type'], 'uv')
+        self.assertEqual(b['server']['entry_point'], 'npreq_mcp.py')
+        cfg = b['server']['mcp_config']
+        self.assertEqual((cfg['command'], cfg['args']), ('uv', ['run', '--directory', '${__dirname}', 'npreq_mcp.py']))
+        self.assertEqual(cfg['env'], {'NPREQ_API_KEY': '${user_config.api_key}',
+                                      'NPREQ_API_BASE': '${user_config.api_base}'})
+        key, base = b['user_config']['api_key'], b['user_config']['api_base']
+        self.assertTrue(key['sensitive'] and key['required'])
+        self.assertNotIn('default', key)
+        self.assertEqual(base['default'], m.DEFAULT_BASE)
+        self.assertFalse(base.get('sensitive', False) or base.get('required', False))
+        for choice in self.plugin['userConfig']['api_base']['options']:
+            self.assertIn(choice, base['description'])
+        self.assertEqual(b['privacy_policies'], [self.plugin['privacyPolicyUrl']])
+        self.assertEqual([t['name'] for t in b['tools']], list(m.TOOLS))
+        self.assertEqual(b['repository']['url'], self.plugin['repository'])
+        self.assertEqual(b['compatibility']['runtimes']['python'], '>=3.10')
+
+    def test_the_bundle_leaves_out_everything_the_server_does_not_need(self):
+        ignore = (ROOT / '.mcpbignore').read_text(encoding='utf-8').split()
+        for rel in ('tests/', 'tools/', '.github/', '.claude-plugin/', 'skills/', 'server.json', 'RELEASING.md'):
+            self.assertIn(rel, ignore)
+        for kept in ('manifest.json', 'pyproject.toml', 'npreq_mcp.py', 'README.md', 'LICENSE'):
+            self.assertNotIn(kept, ignore)
 
     def test_workflow_actions_are_pinned_to_commit_shas(self):
         import re

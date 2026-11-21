@@ -1,0 +1,19 @@
+# The .mcpb holds only what the uv runtime needs: manifest.json, pyproject.toml, npreq_mcp.py, README.md, LICENSE.
+.git/
+.github/
+.claude-plugin/
+.mcp.json
+skills/
+tests/
+tools/
+server.json
+RELEASING.md
+SECURITY.md
+.mcpbignore
+.venv/
+__pycache__/
+*.pyc
+*.egg-info/
+build/
+dist/
+*.mcpb

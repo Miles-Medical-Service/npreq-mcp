@@ -1,0 +1,63 @@
+{
+  "manifest_version": "0.4",
+  "name": "npreq",
+  "display_name": "NPReq",
+  "version": "0.1.0",
+  "description": "Read-only NP/APRN state requirement data for 56 US jurisdictions, with official sources, through your own NPReq API key.",
+  "long_description": "NPReq answers questions about nurse practitioner (NP/APRN) state requirements: licensure, practice authority, continuing education hours and topics, renewal and prescribing, for 56 US jurisdictions, each value with the official board source it came from. Every tool is one read-only GET on the NPReq API. Your API key is kept in your system's credential store and is sent only to POST /v1/token on the API you choose. Not for clinical or licensing decisions; verify each value against its cited source.",
+  "author": {
+    "name": "Miles Medical Service",
+    "url": "https://npreq.com/"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Miles-Medical-Service/npreq-mcp"
+  },
+  "homepage": "https://npreq.com/",
+  "documentation": "https://account.npreq.com/account/docs",
+  "support": "https://github.com/Miles-Medical-Service/npreq-mcp/issues",
+  "server": {
+    "type": "uv",
+    "entry_point": "npreq_mcp.py",
+    "mcp_config": {
+      "command": "uv",
+      "args": ["run", "--directory", "${__dirname}", "npreq_mcp.py"],
+      "env": {
+        "NPREQ_API_KEY": "${user_config.api_key}",
+        "NPREQ_API_BASE": "${user_config.api_base}"
+      }
+    }
+  },
+  "tools": [
+    {"name": "get_data_version", "description": "The NPReq data set version, its last refresh time and the API version."},
+    {"name": "list_states", "description": "Every jurisdiction with its summary."},
+    {"name": "get_state", "description": "One jurisdiction's requirements, with their official sources."},
+    {"name": "get_state_ce", "description": "One jurisdiction's continuing education rules."},
+    {"name": "search_requirements", "description": "Search the requirements across jurisdictions."}
+  ],
+  "keywords": ["nurse-practitioner", "aprn", "licensure", "continuing-education", "state-requirements"],
+  "license": "MIT",
+  "privacy_policies": ["https://npreq.com/privacy.html"],
+  "compatibility": {
+    "platforms": ["darwin", "win32", "linux"],
+    "runtimes": {
+      "python": ">=3.10"
+    }
+  },
+  "user_config": {
+    "api_key": {
+      "type": "string",
+      "title": "NPReq API key",
+      "description": "Your NPReq API key (npq_live_..., or npq_test_... for staging). Stored in your system's credential store; sent only to POST /v1/token on the API below.",
+      "sensitive": true,
+      "required": true
+    },
+    "api_base": {
+      "type": "string",
+      "title": "NPReq API",
+      "description": "Which NPReq API the key is sent to: https://api.npreq.com (production) or https://api-staging.npreq.com (staging, for npq_test_ keys). Anything but an https:// origin is refused.",
+      "default": "https://api.npreq.com",
+      "required": false
+    }
+  }
+}
