@@ -31,3 +31,8 @@ npreq-mcp = "npreq_mcp:cli"
 
 [tool.setuptools]
 py-modules = ["npreq_mcp"]
+
+# The Claude Desktop bundle (manifest.json) starts the server with uv run. The server is one standard-library
+# module, so uv runs it as a script and does not build or install this project (no setuptools download).
+[tool.uv]
+package = false

@@ -707,6 +707,10 @@ class Release(unittest.TestCase):
         self.assertEqual([t['name'] for t in b['tools']], list(m.TOOLS))
         self.assertEqual(b['repository']['url'], self.plugin['repository'])
         self.assertEqual(b['compatibility']['runtimes']['python'], '>=3.10')
+        # uv runs the module as a script: no build of this project on the user's first start
+        pyproject = (ROOT / 'pyproject.toml').read_text(encoding='utf-8').splitlines()
+        uv = pyproject.index('[tool.uv]')
+        self.assertEqual(pyproject[uv + 1], 'package = false')
 
     def test_the_bundle_holds_only_the_five_files_the_server_needs(self):
         # Every tracked top-level entry is one of the five kept files or matched by a pattern; so a new file ships
@@ -717,7 +721,10 @@ class Release(unittest.TestCase):
         kept = {'manifest.json', 'pyproject.toml', 'npreq_mcp.py', 'README.md', 'LICENSE'}
         for name in kept:
             self.assertFalse(any(fnmatch.fnmatch(name, pat) for pat in patterns), name)
-        tracked = subprocess.run(['git', 'ls-files'], cwd=ROOT, capture_output=True, text=True, check=False)
+        try:
+            tracked = subprocess.run(['git', 'ls-files'], cwd=ROOT, capture_output=True, text=True, check=False)
+        except FileNotFoundError:
+            self.skipTest('git is not installed')
         if tracked.returncode != 0:
             self.skipTest('not a git checkout')
         top = {f.split('/', 1)[0] for f in tracked.stdout.splitlines()}
