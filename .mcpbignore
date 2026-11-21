@@ -9,6 +9,7 @@ tools/
 server.json
 RELEASING.md
 SECURITY.md
+CONTRIBUTING.md
 .mcpbignore
 .venv/
 __pycache__/
