@@ -708,12 +708,22 @@ class Release(unittest.TestCase):
         self.assertEqual(b['repository']['url'], self.plugin['repository'])
         self.assertEqual(b['compatibility']['runtimes']['python'], '>=3.10')
 
-    def test_the_bundle_leaves_out_everything_the_server_does_not_need(self):
-        ignore = (ROOT / '.mcpbignore').read_text(encoding='utf-8').split()
-        for rel in ('tests/', 'tools/', '.github/', '.claude-plugin/', 'skills/', 'server.json', 'RELEASING.md'):
-            self.assertIn(rel, ignore)
-        for kept in ('manifest.json', 'pyproject.toml', 'npreq_mcp.py', 'README.md', 'LICENSE'):
-            self.assertNotIn(kept, ignore)
+    def test_the_bundle_holds_only_the_five_files_the_server_needs(self):
+        # Every tracked top-level entry is one of the five kept files or matched by a pattern; so a new file ships
+        # in the bundle only when it is added to KEPT here on purpose. Comment lines are not patterns.
+        import fnmatch
+        lines = (ROOT / '.mcpbignore').read_text(encoding='utf-8').splitlines()
+        patterns = [ln.strip().rstrip('/') for ln in lines if ln.strip() and not ln.lstrip().startswith('#')]
+        kept = {'manifest.json', 'pyproject.toml', 'npreq_mcp.py', 'README.md', 'LICENSE'}
+        for name in kept:
+            self.assertFalse(any(fnmatch.fnmatch(name, pat) for pat in patterns), name)
+        tracked = subprocess.run(['git', 'ls-files'], cwd=ROOT, capture_output=True, text=True, check=False)
+        if tracked.returncode != 0:
+            self.skipTest('not a git checkout')
+        top = {f.split('/', 1)[0] for f in tracked.stdout.splitlines()}
+        self.assertTrue(kept <= top, kept - top)
+        for name in sorted(top - kept):
+            self.assertTrue(any(fnmatch.fnmatch(name, pat) for pat in patterns), f'{name} would ship in the .mcpb')
 
     def test_workflow_actions_are_pinned_to_commit_shas(self):
         import re
