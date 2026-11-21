@@ -55,7 +55,7 @@
     "api_base": {
       "type": "string",
       "title": "NPReq API",
-      "description": "Which NPReq API the key is sent to: https://api.npreq.com (production) or https://api-staging.npreq.com (staging, for npq_test_ keys). Anything but an https:// origin is refused.",
+      "description": "Which NPReq API the key is sent to: https://api.npreq.com (production, the default) or https://api-staging.npreq.com (staging, for npq_test_ keys). Any other value is refused and the server does not start; leave it empty for production.",
       "default": "https://api.npreq.com",
       "required": false
     }

@@ -515,11 +515,18 @@ class CrashPaths(unittest.TestCase):
 
 
 class Config(unittest.TestCase):
-    def test_only_an_https_origin_is_accepted(self):
+    def test_only_the_two_npreq_apis_are_accepted(self):
         self.assertEqual(m.check_base('https://api-staging.npreq.com'), 'https://api-staging.npreq.com')
         self.assertEqual(m.check_base('https://api.npreq.com/'), 'https://api.npreq.com')
+        self.assertEqual(m.check_base(' https://api.npreq.com '), 'https://api.npreq.com')
+        self.assertEqual(m.ALLOWED_BASES, ('https://api.npreq.com', 'https://api-staging.npreq.com'))
         for bad in ('http://api.npreq.com', 'api.npreq.com', 'https://', 'https://u:p@api.npreq.com',
-                    'https://api.npreq.com/v1', 'https://api.npreq.com?x=1', 'file:///etc/passwd', 'ftp://x'):
+                    'https://api.npreq.com/v1', 'https://api.npreq.com?x=1', 'file:///etc/passwd', 'ftp://x',
+                    # #2825: any other https host, a look-alike, a port, a case change or a second slash
+                    'https://evil.example', 'https://api.npreq.com.evil.example', 'https://api-npreq.com',
+                    'https://npreq.com', 'https://api.npreq.com:8443', 'https://api.npreq.com:443',
+                    'https://API.NPREQ.COM', 'https://api.npreq.com//', 'https://api.npreq.com#x',
+                    'https://127.0.0.1:9'):
             with self.assertRaises(m.ConfigError, msg=bad):
                 m.check_base(bad)
 
@@ -593,8 +600,20 @@ class Plugin(unittest.TestCase):
     def test_an_unset_or_empty_base_means_production(self):
         self.assertEqual(m.read_config({'NPREQ_API_KEY': KEY}), (m.DEFAULT_BASE, KEY))
         self.assertEqual(m.read_config({'NPREQ_API_BASE': ' '}), (m.DEFAULT_BASE, None))
+        self.assertEqual(m.read_config({'NPREQ_API_BASE': 'https://api-staging.npreq.com'})[0],
+                         'https://api-staging.npreq.com')
         with self.assertRaises(m.ConfigError):
             m.read_config({'NPREQ_API_BASE': 'http://api.npreq.com'})
+        with self.assertRaises(m.ConfigError):
+            m.read_config({'NPREQ_API_BASE': 'https://evil.example'})
+
+    def test_a_cleared_desktop_setting_means_production(self):
+        # #2825: the bundle passes NPREQ_API_BASE=${user_config.api_base}; a cleared field may arrive unexpanded
+        for value in ('${user_config.api_base}', ' ${user_config.api_base} ', '${}', ''):
+            self.assertEqual(m.read_config({'NPREQ_API_BASE': value})[0], m.DEFAULT_BASE, value)
+        for value in ('${user_config.api_base', 'x${y}', '$HOME'):
+            with self.assertRaises(m.ConfigError, msg=value):
+                m.read_config({'NPREQ_API_BASE': value})
 
     def test_the_marketplace_lists_this_folder(self):
         self.assertEqual(self.market['name'], 'npreq')
@@ -773,12 +792,24 @@ class Release(unittest.TestCase):
 class Process(unittest.TestCase):
     """The real script as a child, the way an MCP client starts it: the key never shows."""
 
-    def run_child(self, base, messages, extra_env=None):
+    def run_child(self, base, messages, extra_env=None, allow=None):
         env = {k: v for k, v in os.environ.items() if not k.startswith('NPREQ_')}
         env.update({'NPREQ_API_KEY': KEY, 'NPREQ_API_BASE': base, 'PYTHONIOENCODING': 'utf-8'}, **(extra_env or {}))
         stdin = ''.join(json.dumps(x) + '\n' for x in messages)
-        return subprocess.run([sys.executable, '-I', str(SCRIPT)], input=stdin.encode(), capture_output=True,
-                              env=env, timeout=120)
+        argv = [sys.executable, '-I', str(SCRIPT)]
+        if allow:
+            # #2825: only a test widens the allowed origins, inside its own child; the shipped script never does
+            boot = ('import sys, runpy; sys.path.insert(0, sys.argv[1]); import npreq_mcp as m; '
+                    'm.ALLOWED_BASES += (sys.argv[2],); sys.argv = [sys.argv[0]]; sys.exit(m.main([]))')
+            argv = [sys.executable, '-I', '-c', boot, str(SCRIPT.parent), allow]
+        return subprocess.run(argv, input=stdin.encode(), capture_output=True, env=env, timeout=120)
+
+    def test_another_host_is_refused_at_start_up_and_the_key_is_not_sent(self):
+        p = self.run_child('https://127.0.0.1:9', [{'jsonrpc': '2.0', 'id': 1, 'method': 'tools/list'}])
+        self.assertEqual(p.returncode, 2)
+        self.assertIn(b'https://api.npreq.com or https://api-staging.npreq.com', p.stderr)
+        self.assertEqual(p.stdout, b'')
+        no_secret(self, p.stdout.decode() + p.stderr.decode())
 
     def test_http_base_is_refused_at_start_up(self):
         p = self.run_child('http://api.npreq.com', [])
@@ -799,7 +830,7 @@ class Process(unittest.TestCase):
         msgs += [{'jsonrpc': '2.0', 'id': 2 + i, 'method': 'tools/call', 'params': {'name': n, 'arguments': a}}
                  for i, (n, a) in enumerate([('get_data_version', {}), ('list_states', {}), ('get_state', {'code': 'TX'}),
                                              ('get_state_ce', {'code': 'TX'}), ('search_requirements', {'q': 'ce'})])]
-        p = self.run_child('https://127.0.0.1:9', msgs)
+        p = self.run_child('https://127.0.0.1:9', msgs, allow='https://127.0.0.1:9')
         self.assertEqual(p.returncode, 0, p.stderr)
         out, err = p.stdout.decode(), p.stderr.decode()
         replies = [json.loads(line) for line in out.splitlines()]

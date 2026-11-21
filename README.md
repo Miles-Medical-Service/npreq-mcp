@@ -16,6 +16,14 @@ the state board of nursing before you act on it.
 
 You need an NPReq API key (https://npreq.com/) and Python 3.10 or newer as `python3` on your PATH.
 
+## Claude Desktop
+
+Use the Claude Desktop bundle (`npreq-<version>.mcpb`): open it in Claude Desktop (Settings > Extensions), then
+enter your API key. Claude Desktop runs the server itself, so you need no Python of your own. The NPReq API setting
+accepts only `https://api.npreq.com` (the default; leave it empty) or `https://api-staging.npreq.com`: the server
+refuses any other address and does not start, because your key is sent there. How the bundle is built is under
+[Claude Desktop bundle (.mcpb)](#claude-desktop-bundle-mcpb). The plugin sections below are for Claude Code.
+
 ## Install the plugin (Claude Code)
 
 The plugin needs **Claude Code v2.1.271 or later** and works in **Claude Code only**. (Cowork skips a plugin server
@@ -103,7 +111,7 @@ and a fixed message; for `429` and `503` it says how many seconds to wait.
 
 Any MCP client that starts a local stdio server can run `npreq_mcp.py` directly. Set `NPREQ_API_KEY` in that
 client's server configuration (never on a command line or in a prompt), and optionally `NPREQ_API_BASE`, which
-accepts only an `https://` origin and defaults to `https://api.npreq.com`. For example, in Claude Desktop's
+accepts only `https://api.npreq.com` (the default) or `https://api-staging.npreq.com`. For example, in Claude Desktop's
 `claude_desktop_config.json`:
 
 ```json
@@ -160,5 +168,6 @@ child-process tests point the server at an address that refuses at once. They co
 
 ## Security and licence
 
-Report a vulnerability as described in [SECURITY.md](SECURITY.md); please do not open a public issue for it.
+Report a vulnerability as described in
+[SECURITY.md](https://github.com/Miles-Medical-Service/npreq-mcp/blob/main/SECURITY.md); please do not open a public issue for it.
 MIT licence: see [LICENSE](LICENSE).

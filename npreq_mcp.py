@@ -7,7 +7,8 @@ IP allowlist, key blocks, revocation) stays the API's.
 
 - Credential: NPREQ_API_KEY, from the environment only. It is used only at POST /v1/token;
   every data call uses the 6-hour access token, held in memory only.
-- NPREQ_API_BASE defaults to https://api.npreq.com (staging: https://api-staging.npreq.com with
+- NPREQ_API_BASE is one of the two NPReq APIs and defaults to https://api.npreq.com (staging:
+  https://api-staging.npreq.com with
   an npq_test_ key). Anything but an https:// origin is refused at start-up.
 - Transport: stdio, newline-delimited JSON-RPC 2.0. Dual-era: a request that carries the
   per-request _meta of revision 2026-07-28 is served statelessly; an initialize request selects
@@ -37,6 +38,10 @@ from typing import Any, Callable, Optional
 VERSION = '0.1.0'
 SERVER_INFO = {'name': 'npreq-mcp', 'version': VERSION}
 DEFAULT_BASE = 'https://api.npreq.com'
+# The only origins the key is ever sent to: production and staging. Any other value is refused at start-up, so a
+# user cannot be talked into typing another host into the API setting (the Claude Desktop bundle's field is free
+# text).
+ALLOWED_BASES = ('https://api.npreq.com', 'https://api-staging.npreq.com')
 MODERN_VERSIONS = ('2026-07-28',)
 LEGACY_VERSIONS = ('2025-11-25', '2025-06-18', '2025-03-26')
 SUPPORTED_VERSIONS = MODERN_VERSIONS + LEGACY_VERSIONS
@@ -72,7 +77,7 @@ NO_KEY = 'NPREQ_API_KEY is not set in the MCP server environment; only get_data_
 BAD_KEY = 'NPREQ_API_KEY does not look like an NPReq API key (npq_live_... or npq_test_...); it was not sent.'
 KEY_HELD = ('The NPReq API refused the token request earlier in this session, so no further request is sent with '
             'the key. Check NPREQ_API_KEY (valid, not revoked or blocked), that this IP is on the key\'s allowlist, '
-            'and that NPREQ_API_BASE is the https:// API origin; then restart the MCP server. Only get_data_version '
+            'and that NPREQ_API_BASE is one of the two NPReq APIs; then restart the MCP server. Only get_data_version '
             'works until then.')
 HELD_STATUSES = (401, 403)    # a refusal of the key itself; 429 and 5xx at /v1/token are temporary and never held
 UNREACHABLE = 'The NPReq API could not be reached (network error or timeout). Try again later.'
@@ -123,12 +128,21 @@ class ConfigError(Exception):
 
 
 def check_base(base: str) -> str:
-    """The API origin: https only, a host, nothing else (no user info, path, query or fragment)."""
-    parts = urllib.parse.urlsplit(base.strip())
-    if (parts.scheme != 'https' or not parts.hostname or parts.username is not None
-            or parts.password is not None or parts.path not in ('', '/') or parts.query or parts.fragment):
-        raise ConfigError('NPREQ_API_BASE must be an https:// origin such as https://api.npreq.com')
-    return f'https://{parts.netloc}'
+    """The API origin: exactly one of ALLOWED_BASES (a trailing / is allowed), nothing else."""
+    origin = base.strip()
+    origin = origin[:-1] if origin.endswith('/') else origin
+    if origin not in ALLOWED_BASES:
+        raise ConfigError('NPREQ_API_BASE must be https://api.npreq.com or https://api-staging.npreq.com')
+    return origin
+
+
+def base_setting(value: str) -> str:
+    """The base from NPREQ_API_BASE: empty, or a placeholder the client left unexpanded (a cleared setting in the
+    Claude Desktop bundle can arrive as the literal ${user_config.api_base}), means the default."""
+    value = value.strip()
+    if not value or (value.startswith('${') and value.endswith('}')):
+        return DEFAULT_BASE
+    return check_base(value)
 
 
 def key_shape_ok(key: str) -> bool:
@@ -432,9 +446,9 @@ def _encode(reply: dict) -> bytes:
 def read_config(environ) -> tuple[str, Optional[str]]:
     """The base and the key from the process environment, exactly as the MCP client set it (the Claude Code plugin
     sets both from its own settings, over anything inherited from the shell). The key is taken out of the environment
-    once read. Raises ConfigError for a base that is not an https:// origin."""
+    once read. Raises ConfigError for a base that is not one of the two NPReq APIs."""
     key = environ.pop('NPREQ_API_KEY', '').strip() or None
-    return check_base(environ.get('NPREQ_API_BASE', '').strip() or DEFAULT_BASE), key
+    return base_setting(environ.get('NPREQ_API_BASE', '')), key
 
 
 def main(argv: list[str]) -> int:
