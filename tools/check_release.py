@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
-"""Release check: the tag, pyproject.toml, server.json, the plugin manifest and the server all carry one version,
+"""Release check: the tag, pyproject.toml, server.json, the plugin manifest, the Claude Desktop bundle manifest
+(manifest.json) and the server all carry one version,
 and server.json names this package. Run by the release workflow before it builds: python3 tools/check_release.py v0.1.0
 (with no tag, it checks only that the files agree). Exit 0 when they do; otherwise each mismatch is printed."""
 import json
@@ -19,6 +20,7 @@ def problems(tag=None, root=ROOT):
     srv_version = re.search(r"^VERSION = '([^']+)'$", server_src, re.M)
     server = json.loads((root / 'server.json').read_text(encoding='utf-8'))
     plugin = json.loads((root / '.claude-plugin' / 'plugin.json').read_text(encoding='utf-8'))
+    bundle = json.loads((root / 'manifest.json').read_text(encoding='utf-8'))
     readme = (root / 'README.md').read_text(encoding='utf-8')
     if not (py_version and py_name and srv_version):
         return ['pyproject.toml or npreq_mcp.py: version or name not found']
@@ -28,7 +30,8 @@ def problems(tag=None, root=ROOT):
     pkgs = [p for p in server.get('packages', []) if p.get('registryType') == 'pypi']
     for label, value in (('npreq_mcp.VERSION', srv_version.group(1)), ('server.json version', server.get('version')),
                          ('server.json pypi package version', pkgs[0].get('version') if pkgs else None),
-                         ('plugin.json version', plugin.get('version'))):
+                         ('plugin.json version', plugin.get('version')),
+                         ('manifest.json version', bundle.get('version'))):
         if value != version:
             out.append(f'{label} is {value!r}, pyproject says {version!r}')
     if len(pkgs) != 1 or pkgs[0].get('identifier') != py_name.group(1):
