@@ -57,6 +57,10 @@ MAX_RETRY_AFTER = 40 * 86400  # a quota 429 can point at the next month
 MAX_TOKEN_TTL = 6 * 3600      # a token is never trusted for longer than the API's 6 hours
 # What parsing untrusted JSON (stdin, an API reply) can raise; RecursionError is deep nesting.
 JSON_ERRORS = (ValueError, UnicodeDecodeError, RecursionError)
+# Deeper JSON than this is refused as a parse error. The decoder's own RecursionError is not enough: Python 3.14
+# parses an object nested 50,000 deep without one, and the reply to it could not be written back out. No request
+# or API reply comes near this depth.
+MAX_JSON_DEPTH = 128
 
 # The API's error codes (openapi components.schemas.Error.enum). Only these are ever echoed.
 API_ERROR_CODES = frozenset({
@@ -125,6 +129,25 @@ TOOLS = {
 
 class ConfigError(Exception):
     """A start-up problem; its text is fixed and never holds the key."""
+
+
+def loads(text: str) -> Any:
+    """json.loads for untrusted text, with one nesting limit on every Python version: deeper than MAX_JSON_DEPTH
+    raises ValueError, which JSON_ERRORS catches. The check walks the parsed value without recursion."""
+    value = json.loads(text)
+    stack = [(value, 1)]
+    while stack:
+        item, depth = stack.pop()
+        if isinstance(item, dict):
+            children = item.values()
+        elif isinstance(item, list):
+            children = item
+        else:
+            continue
+        if depth > MAX_JSON_DEPTH:
+            raise ValueError(f'JSON nested deeper than {MAX_JSON_DEPTH}')
+        stack.extend((child, depth + 1) for child in children)
+    return value
 
 
 def check_base(base: str) -> str:
@@ -230,7 +253,7 @@ class NpreqApi:
     @staticmethod
     def _error(status: int, hdrs: dict, body: bytes) -> ApiError:
         try:
-            code = json.loads(body.decode('utf-8')).get('error')
+            code = loads(body.decode('utf-8')).get('error')
         except (*JSON_ERRORS, AttributeError):
             code = None
         # Only a string can be one of the API's codes; a list or object is unhashable and is no code.
@@ -251,7 +274,7 @@ class NpreqApi:
                 self._key_refused = err
             raise err
         try:
-            data = json.loads(body.decode('utf-8'))
+            data = loads(body.decode('utf-8'))
             token, ttl = data['access_token'], data['expires_in']
             # A JSON number only (not a string or a bool), finite and positive; float() of a huge integer
             # raises OverflowError, and NaN or Infinity would fetch a token every call or never renew early.
@@ -283,7 +306,7 @@ class NpreqApi:
         if status != 200:
             raise self._error(status, hdrs, body)
         try:
-            return json.loads(body.decode('utf-8'))
+            return loads(body.decode('utf-8'))
         except JSON_ERRORS:                                   # deep nesting is RecursionError
             raise ApiError(0, message=NOT_JSON) from None
 
@@ -415,7 +438,7 @@ def serve(server: Server, stdin, stdout) -> None:
             continue
         else:
             try:
-                msg = json.loads(line.decode('utf-8'))
+                msg = loads(line.decode('utf-8'))
             except JSON_ERRORS:                                # deep nesting is a parse error too
                 reply = Server._err(None, -32700, 'Parse error')
             else:

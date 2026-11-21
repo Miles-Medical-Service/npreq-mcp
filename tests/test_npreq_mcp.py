@@ -446,6 +446,18 @@ class CrashPaths(unittest.TestCase):
         self.assertEqual([r.get('error', {}).get('code') for r in replies], [-32700, -32700, None])
         self.assertEqual(replies[-1]['id'], 7)
 
+    def test_the_nesting_limit_is_the_server_s_own_on_every_python(self):
+        # #2822: Python 3.14's decoder parses '{"a":' * 50_000 without a RecursionError, so the limit is checked
+        # on the parsed value; an object and a list count the same, and the limit is exact.
+        at_limit = '[' * m.MAX_JSON_DEPTH + ']' * m.MAX_JSON_DEPTH
+        self.assertIsInstance(m.loads(at_limit), list)
+        for text in ('[' * (m.MAX_JSON_DEPTH + 1) + ']' * (m.MAX_JSON_DEPTH + 1),
+                     '{"a":' * (m.MAX_JSON_DEPTH + 1) + '1' + '}' * (m.MAX_JSON_DEPTH + 1),
+                     '{"a":' * 50_000 + '1' + '}' * 50_000):
+            with self.assertRaises(m.JSON_ERRORS, msg=text[:20]):
+                m.loads(text)
+        self.assertEqual(m.loads('{"a": [1, {"b": null}], "c": "[[["}'), {'a': [1, {'b': None}], 'c': '[[['})
+
     def test_v2_a_lone_surrogate_in_an_id_is_answered_as_ascii_json(self):
         replies = serve_lines(m.Server(api()[0]), ['{"jsonrpc":"2.0","id":"\\ud800","method":"ping","params":{"_meta":'
                                                    + json.dumps(MODERN) + '}}', ping(8)])
