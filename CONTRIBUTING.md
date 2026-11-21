@@ -11,7 +11,8 @@ Pull requests opened by the maintainers' own tooling are authored by the code ow
 an author approve their own pull request, so those pull requests can never get the required review on GitHub. For
 them the review happens before the merge, outside GitHub: an independent review approves the exact head commit, and
 a separate go-ahead names that same head. The code owner then merges with **Merge without waiting for requirements
-to be met (bypass rules)**, at that head and only then. The bypass is the intended route for these pull requests,
+to be met (bypass rules)**, at that head and only then, once the required checks (`tests (3.10)` and
+`tests (3.13)`) have passed at that head: the bypass skips them too. The bypass is the intended route for these pull requests,
 not an exception, and the merge is the code owner's own sign-off.
 
 A pull request from anyone else gets the code owner's review on GitHub as usual.
