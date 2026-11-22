@@ -831,7 +831,7 @@ class Process(unittest.TestCase):
         argv = [sys.executable, '-I', str(SCRIPT)]
         if allow:
             # #2825: only a test widens the allowed origins, inside its own child; the shipped script never does
-            boot = ('import sys, runpy; sys.path.insert(0, sys.argv[1]); import npreq_mcp as m; '
+            boot = ('import sys; sys.path.insert(0, sys.argv[1]); import npreq_mcp as m; '
                     'm.ALLOWED_BASES += (sys.argv[2],); sys.argv = [sys.argv[0]]; sys.exit(m.main([]))')
             argv = [sys.executable, '-I', '-c', boot, str(SCRIPT.parent), allow]
         return subprocess.run(argv, input=stdin.encode(), capture_output=True, env=env, timeout=120)
