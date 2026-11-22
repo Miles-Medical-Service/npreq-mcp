@@ -15,6 +15,8 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     strategy:
+      # #2822: 3.14 is checked too; one version failing never cancels the others (3.10 and 3.13 are required)
+      fail-fast: false
       matrix:
         python: ['3.10', '3.13', '3.14']
     steps:

@@ -307,7 +307,7 @@ class NpreqApi:
             raise self._error(status, hdrs, body)
         try:
             return loads(body.decode('utf-8'))
-        except JSON_ERRORS:                                   # deep nesting is RecursionError
+        except JSON_ERRORS:                                   # deep nesting: loads() refuses it on every Python
             raise ApiError(0, message=NOT_JSON) from None
 
 
