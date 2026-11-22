@@ -490,6 +490,26 @@ class CrashPaths(unittest.TestCase):
             api(fake)[0].get('/v1/meta', False)
         self.assertEqual(cm.exception.message, m.NOT_JSON)
 
+    def test_each_api_parse_site_applies_the_server_s_own_limit(self):
+        # #2822: a body one level past MAX_JSON_DEPTH, which every Python's decoder parses, so only loads() can
+        # refuse it; each body would be accepted without the limit.
+        deep = '[' * (m.MAX_JSON_DEPTH + 1) + ']' * (m.MAX_JSON_DEPTH + 1)
+        fake = FakeApi()
+        fake.routes['/v1/meta'] = (200, {}, deep.encode())                           # NpreqApi.get
+        with self.assertRaises(m.ApiError) as cm:
+            api(fake)[0].get('/v1/meta', False)
+        self.assertEqual(cm.exception.message, m.NOT_JSON)
+        fake = FakeApi()
+        fake.routes['/v1/states/ZZ'] = (403, {}, ('{"error":"forbidden","x":' + deep + '}').encode())  # _error
+        err = call(m.Server(api(fake)[0]), 'get_state', {'code': 'ZZ'})['result']['structuredContent']['error']
+        self.assertEqual((err['status'], err.get('code')), (403, None))
+        token = json.dumps({'access_token': 'npat_live_' + 'a' * 40, 'expires_in': 21600})[:-1]
+        fake = FakeApi()
+        fake.routes['/v1/token'] = (200, {}, (token + ',"x":' + deep + '}').encode())  # _renew
+        with self.assertRaises(m.ApiError) as cm:
+            api(fake)[0].get('/v1/states', True)
+        self.assertEqual(cm.exception.message, m.NOT_JSON)
+
     def test_v3_a_deeply_nested_error_body_has_no_code(self):
         fake = FakeApi()
         fake.routes['/v1/states/ZZ'] = (404, {}, DEEP.encode())
