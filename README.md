@@ -38,9 +38,12 @@ On Claude Code 2.1.275 or later, one line does both: `/plugin install npreq --ma
 
 **On Windows**, the plugin starts the server with `python3`. On many Windows machines `python3` is only the Microsoft
 Store alias, which opens the Store instead of running Python. Before you enable the plugin, run `python3 --version`
-in a terminal: it must print Python 3.10 or newer. If it does not, install Python from python.org or the Microsoft
-Store, or turn off the `python3.exe` App Execution Alias (Settings > Apps > Advanced app settings) once a real
-`python3` is on your PATH.
+in a terminal: it must print Python 3.10 or newer. If it does not, install Python 3.10 or newer from the Microsoft
+Store, which adds a real `python3`. A Python installed with the python.org installer is not enough on its own: it
+adds `python` and `py` but no `python3`, so `python3` still opens the Store. If you keep a python.org Python, turn off
+the `python3.exe` App Execution Alias (Settings > Apps > Advanced app settings) and put a `python3` of your own on
+your PATH before you enable the plugin. Claude Desktop users can skip this: the Claude Desktop bundle above needs no
+Python.
 
 When the plugin is enabled, Claude Code asks for two settings:
 
