@@ -7,9 +7,8 @@ IP allowlist, key blocks, revocation) stays the API's.
 
 - Credential: NPREQ_API_KEY, from the environment only. It is used only at POST /v1/token;
   every data call uses the 6-hour access token, held in memory only.
-- NPREQ_API_BASE is one of the two NPReq APIs and defaults to https://api.npreq.com (staging:
-  https://api-staging.npreq.com with
-  an npq_test_ key). Anything but an https:// origin is refused at start-up.
+- NPREQ_API_BASE is one of the two NPReq APIs, https://api.npreq.com (the default) or
+  https://api-staging.npreq.com (with an npq_test_ key); any other value is refused at start-up.
 - Transport: stdio, newline-delimited JSON-RPC 2.0. Dual-era: a request that carries the
   per-request _meta of revision 2026-07-28 is served statelessly; an initialize request selects
   the legacy handshake (2025-11-25 and earlier) for the life of the process.
